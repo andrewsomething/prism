@@ -71,4 +71,77 @@ describe('getHttpOperationsFromSpec()', () => {
       });
     });
   });
+
+  describe('circular refs are not allowed', () => {
+    it('fails with exception', () => {
+      return expect(
+        getHttpOperationsFromSpec({
+          openapi: '3.0.0',
+          paths: {
+            '/people': {
+              get: {
+                responses: {
+                  '200': {
+                    content: {
+                      'application/json': {
+                        schema: { $ref: '#/components/schemas/Person' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          components: {
+            schemas: {
+              Person: {
+                properties: {
+                  name: { type: 'string' },
+                  spouse: { $ref: '#/components/schemas/Person' },
+                },
+              },
+            },
+          },
+        })
+      ).rejects.toThrow(/^Circular \$ref pointer found at .*#\/components\/schemas\/Person\/properties\/spouse$/);
+    });
+  });
+
+  describe('circular refs are allowed', () => {
+    it('detects it properly', () => {
+      return expect(
+        getHttpOperationsFromSpec(
+          {
+            openapi: '3.0.0',
+            paths: {
+              '/people': {
+                get: {
+                  responses: {
+                    '200': {
+                      content: {
+                        'application/json': {
+                          schema: { $ref: '#/components/schemas/Person' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            components: {
+              schemas: {
+                Person: {
+                  properties: {
+                    name: { type: 'string' },
+                    spouse: { $ref: '#/components/schemas/Person' },
+                  },
+                },
+              },
+            },
+          },
+          true
+        )
+      ).resolves.toBeTruthy();
+    });
+  });
 });

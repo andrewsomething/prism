@@ -65,7 +65,7 @@ const createSingleProcessPrism: CreatePrism = options => {
 };
 
 async function createPrismServerWithLogger(options: CreateBaseServerOptions, logInstance: Logger) {
-  const operations = await getHttpOperationsFromSpec(options.document);
+  const operations = await getHttpOperationsFromSpec(options.document, isProxyServerOptions(options));
 
   if (operations.length === 0) {
     throw new Error('No operations found in the current file.');
